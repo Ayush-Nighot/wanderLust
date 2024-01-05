@@ -9,6 +9,7 @@ const ejsmate=require('ejs-mate');
 const wrapasync=require('./utils/wrapasync.js')
 const ExpressError=require('./utils/ExpressError.js');
 const { wrap } = require('module');
+const {listingSchema}=require('./schema.js')
 
 app.use(express.urlencoded({extended:true}));
 app.use(express.json());
@@ -78,13 +79,13 @@ app.post('/listings',wrapasync(async(req,res,next)=>{
     // })
     // await newList.save()
     ////OR
-    if(!req.body.listing){
-        throw new ExpressError(400,"Send Valid Data For Listing")
-    }else{
+        let result=listingSchema.validate(req.body);
+        if(result.error){
+            throw new ExpressError(400,result.error)
+        }
         const newListing=new Listing(req.body.listing);
         await newListing.save();
         res.redirect('/listings');
-    }
 }))
 
 ////edit route

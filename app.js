@@ -10,6 +10,7 @@ const wrapasync=require('./utils/wrapasync.js')
 const ExpressError=require('./utils/ExpressError.js');
 const { wrap } = require('module');
 const {listingSchema}=require('./schema.js')
+const Review=require('./models/review.js');
 
 app.use(express.urlencoded({extended:true}));
 app.use(express.json());
@@ -34,6 +35,18 @@ main().then((res)=>console.log("connected to DB")).catch((err)=>console.log(err)
 app.get('/',(req,res)=>{
     res.render('./listings/home.ejs');
 })
+
+const validateListing=(req,res,next)=>{
+    let {error}=listingSchema.validate(req.body);
+    if(error){
+        let errMsg=error.details.map((el)=>{
+            el.message.join(',')
+        })
+        throw new ExpressError(400,errMsg)
+    }else{
+        next();
+    }
+}
 
 // app.get('/testListing',async(req,res)=>{
 //     let sampleListing=new Listing({
@@ -79,17 +92,13 @@ app.post('/listings',wrapasync(async(req,res,next)=>{
     // })
     // await newList.save()
     ////OR
-        let result=listingSchema.validate(req.body);
-        if(result.error){
-            throw new ExpressError(400,result.error)
-        }
         const newListing=new Listing(req.body.listing);
         await newListing.save();
         res.redirect('/listings');
 }))
 
 ////edit route
-app.get('/listings/:id/edit',wrapasync(async (req,res)=>{
+app.get('/listings/:id/edit',validateListing,wrapasync(async (req,res)=>{
     let{id}=req.params;
     const listing=await Listing.findById(id);
     console.log(listing);
@@ -97,14 +106,10 @@ app.get('/listings/:id/edit',wrapasync(async (req,res)=>{
 }))
 
 ////update
-app.put('/listings/:id',wrapasync(async(req,res)=>{
-    if(!req.body.listing){
-        throw new ExpressError(400,"Send Valid Data For Listing")
-    }else{
+app.put('/listings/:id',validateListing,wrapasync(async(req,res)=>{
     let{id}=req.params;
     await Listing.findByIdAndUpdate(id,{...req.body.listing});
     res.redirect(`/listings/${id}`)
-    }
 }))
 
 ////delete route

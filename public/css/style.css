@@ -105,3 +105,9 @@ body{
     padding-left: 0;
     padding-right: 0;
 }
+.car{
+    transition: 0.3s;
+}
+.car:hover{
+    transform: scale(1.1);
+}

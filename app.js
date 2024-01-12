@@ -2,134 +2,88 @@ const express=require('express');
 const app=express();
 const mongoose=require('mongoose');
 const path=require('path');
-const ejs=require('ejs');
 const methodoverride=require('method-override');
-const Listing=require('./models/listing.js')
 const ejsmate=require('ejs-mate');
-const wrapasync=require('./utils/wrapasync.js')
 const ExpressError=require('./utils/ExpressError.js');
-const { wrap } = require('module');
-const {listingSchema}=require('./schema.js')
-const Review=require('./models/review.js');
+const listings=require('./routes/listings.js');
+const reviews=require('./routes/review.js');
+const home=require('./routes/home.js');
+const session=require('express-session');
+const flash=require('connect-flash');
 
+////To get data from url if we want to use req.body req.params etc
 app.use(express.urlencoded({extended:true}));
 app.use(express.json());
 
+////To use ejs and direct it in the views folder
 app.set('view engine','ejs')
 app.set('views',path.join(__dirname,'views'))
 
+////EJS MATE for using common layout in all ejs files
 app.engine('ejs',ejsmate);
 
+////To use delete update method which is not supported in form html
 app.use(methodoverride('_method'));
 
+////To direct the style or js in public folder
 app.use(express.static(path.join(__dirname,"public")));
 
+////Basics While using Mongo
 async function main(){
     let mongoURL="mongodb://localhost:27017/wanderLust";
     await mongoose.connect(mongoURL);
 }
-
 main().then((res)=>console.log("connected to DB")).catch((err)=>console.log(err))
 
+////Route path
+// app.get('/',(req,res)=>{
+//     res.render('./listings/home.ejs');
+// })
 
-app.get('/',(req,res)=>{
-    res.render('./listings/home.ejs');
-})
-
-const validateListing=(req,res,next)=>{
-    let {error}=listingSchema.validate(req.body);
-    if(error){
-        let errMsg=error.details.map((el)=>{
-            el.message.join(',')
-        })
-        throw new ExpressError(400,errMsg)
-    }else{
-        next();
+////Creating session
+const sessionOptions={
+    secret:"mysupersecretcode",
+    resave:false,
+    saveUninitialized:true,
+    cookie:{
+        // 7day 24hrs 60 min 60 sec 1000ms
+        expires:Date.now() + 7*24*60*60*1000,
+        maxAge:7*24*60*60*1000,
+        httpOnly:true
     }
 }
+app.use(session(sessionOptions));
 
-// app.get('/testListing',async(req,res)=>{
-//     let sampleListing=new Listing({
-//         title:"My new Villa",
-//         description:"By the beach",
-//         price:1200,
-//         location:"calangute,goa",
-//         country:"India"
-//     });
-//     await sampleListing.save();
-//     console.log("Sample was saved");
-//     res.send('Successful Testing')
-// });
+// //Using flash /////This should be use before the routes like app.use('/listings',lisings) or app.use('/listings/:id/reviews',reviews) because we are going to use flash on the basics of them
+app.use(flash());
 
-////Index Route
-app.get('/listings',wrapasync(async(req,res)=>{
-    let allListings=await Listing.find({});
-    res.render('./listings/index.ejs',{allListings});
-}))
-
-////NEW(This new route should be before show route because if not the browser will take new param as id)
-app.get('/listings/new',(req,res)=>{
-    res.render('./listings/newForm.ejs')
+////directing the success in index.ejs
+app.use((req,res,next)=>{
+    res.locals.success=req.flash('success')
+    res.locals.err=req.flash('failure')
+    next();
 })
 
-////SHOW Route
-app.get('/listings/:id',wrapasync(async(req,res)=>{
-    let {id}=req.params;
-    let list=await Listing.findById(id);
-    res.render('./listings/show.ejs',{list})
-}))
+////USINGS common path here and direct in there folder rest path added in files
+app.use('/listings',listings)
+app.use('/listings/:id/reviews',reviews)
+app.use('/',home);
 
-////create route
-app.post('/listings',wrapasync(async(req,res,next)=>{
-    // let {title,description,price,image,country,location}=req.body;
-    // let newList=new Listing({
-    //     title:title,
-    //     description:description,
-    //     image:image,
-    //     price:price,
-    //     location:location,
-    //     country:country
-    // })
-    // await newList.save()
-    ////OR
-        const newListing=new Listing(req.body.listing);
-        await newListing.save();
-        res.redirect('/listings');
-}))
 
-////edit route
-app.get('/listings/:id/edit',validateListing,wrapasync(async (req,res)=>{
-    let{id}=req.params;
-    const listing=await Listing.findById(id);
-    console.log(listing);
-    res.render('./listings/edit.ejs',{listing});
-}))
 
-////update
-app.put('/listings/:id',validateListing,wrapasync(async(req,res)=>{
-    let{id}=req.params;
-    await Listing.findByIdAndUpdate(id,{...req.body.listing});
-    res.redirect(`/listings/${id}`)
-}))
-
-////delete route
-app.delete('/listings/:id',wrapasync(async(req,res)=>{
-    let {id}=req.params;
-    let deletedListing=await Listing.findByIdAndDelete(id)
-    console.log(deletedListing)
-    res.redirect('/listings');
-}))
-
+////In case any other invalid path
 app.all('*',(req,res,next)=>{
     return next(new ExpressError(404,"Page Not Found!!"))
 })
 
+/////Error handling middleware
 app.use((err,req,res,next)=>{
     let {status=500,message="Something Went Wrong"}=err;
     res.status(status).render('./listings/error.ejs',{err});
     // res.status(status).send(message);
 })
 
+////port
 app.listen(8080,()=>{
     console.log("App is listening at port 8080")
-}) 
+})

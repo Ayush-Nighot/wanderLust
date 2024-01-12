@@ -54,7 +54,7 @@ body{
 }
 
 /* Cards */
-.card{
+.listing-card{
     border: none !important;
     margin-bottom: 2rem;
 }
@@ -109,5 +109,6 @@ body{
     transition: 0.3s;
 }
 .car:hover{
-    transform: scale(1.1);
+    /* transform: scale(1.1); */
+    transform: rotateX(20deg);
 }

@@ -1,0 +1,22 @@
+<% layout('/layouts/boilerPlate') %>
+        
+<div class="row">
+    <h1 class="col-6 offset-3">Login</h1>
+    <div class="col-6 offset-3">
+        <form action="/login" method="post" class="needs-validation" novalidate>
+            <div class="mb-1">
+                <label for="username" class="form-label">Enter UserName:</label>
+                <input type="text" name="username" class="form-control" placeholder="Enter Your Name" id="username" required>
+                <div class="valid-feedback"></div>
+                <div class="invalid-feedback">Name is required</div>
+            </div>
+            <div class="mb-1">
+                <label for="password" class="form-label">Enter Your Password:</label>
+                <input type="password" name="password" class="form-control" placeholder="Enter Your Name" id="email" required>
+                <div class="valid-feedback"></div>
+                <div class="invalid-feedback">password is required</div>
+            </div>
+            <button class="mt-2 btn btn-success">Login</button>
+        </form>
+    </div>
+</div>

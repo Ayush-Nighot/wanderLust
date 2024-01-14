@@ -25,10 +25,28 @@ router.get('/',wrapasync(async(req,res)=>{
 }))
 
 ////NEW(This new route should be before show route because if not the browser will take new param as id)
+// router.get('/new',(req,res)=>{
+//     res.render('./listings/newForm.ejs')
+// })
+
+// New Route
+// router.get('/new',(req,res)=>{
+//     if(!req.isAuthenticated()){
+//         req.flash('failure',"You must be logged in to create listing")
+//         // res.redirect('/signup')
+//         res.redirect('/login');
+//     }
+//     res.render('./listings/newForm.ejs')
+// })
+// New Route
 router.get('/new',(req,res)=>{
+    if(!req.isAuthenticated()){
+        req.flash('failure',"You must be logged in to create listing")
+        // res.redirect('/signup')
+        res.redirect('/login');
+    }
     res.render('./listings/newForm.ejs')
 })
-
 ////SHOW Route
 router.get('/:id',wrapasync(async(req,res)=>{
     let {id}=req.params;
@@ -85,7 +103,9 @@ router.delete('/:id',wrapasync(async(req,res)=>{
     let deletedListing=await Listing.findByIdAndDelete(id)
     console.log(deletedListing)
     req.flash('failure',"Listing deleted Successfully")
-    res.redirect('/listings');
+    return res.redirect('/listings');
 }))
+
+
 
 module.exports=router;

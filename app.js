@@ -5,11 +5,15 @@ const path=require('path');
 const methodoverride=require('method-override');
 const ejsmate=require('ejs-mate');
 const ExpressError=require('./utils/ExpressError.js');
-const listings=require('./routes/listings.js');
-const reviews=require('./routes/review.js');
-const home=require('./routes/home.js');
+const listingsRouter=require('./routes/listings.js');
+const reviewsRouter=require('./routes/review.js');
+const homeRouter=require('./routes/home.js');
 const session=require('express-session');
 const flash=require('connect-flash');
+const passport=require('passport');
+const LocalStrategy=require('passport-local').Strategy;
+const User=require('./models/User.js');
+const userRouter=require('./routes/user.js');
 
 ////To get data from url if we want to use req.body req.params etc
 app.use(express.urlencoded({extended:true}));
@@ -35,11 +39,6 @@ async function main(){
 }
 main().then((res)=>console.log("connected to DB")).catch((err)=>console.log(err))
 
-////Route path
-// app.get('/',(req,res)=>{
-//     res.render('./listings/home.ejs');
-// })
-
 ////Creating session
 const sessionOptions={
     secret:"mysupersecretcode",
@@ -57,6 +56,25 @@ app.use(session(sessionOptions));
 // //Using flash /////This should be use before the routes like app.use('/listings',lisings) or app.use('/listings/:id/reviews',reviews) because we are going to use flash on the basics of them
 app.use(flash());
 
+// PASSPORT
+// To use passport we need to ensure that we have created our session
+
+// Implementation of passport ///For every req password is initialized
+app.use(passport.initialize());
+
+////In one session a user change req many time but we need that he should only need to sign in only one time in session///Thats why we use app.use(passport.session());
+app.use(passport.session());
+
+// All the new user came should be authenticate from LocalStrategy and to authenticate them authenticate() method is used 
+passport.use(new LocalStrategy(User.authenticate()));
+
+//All the information related to user stored in session is called serializeUser 
+passport.serializeUser(User.serializeUser())
+
+//All the information related to user remove from session is called deserializeUser
+passport.deserializeUser(User.deserializeUser())
+
+
 ////directing the success in index.ejs
 app.use((req,res,next)=>{
     res.locals.success=req.flash('success')
@@ -64,11 +82,13 @@ app.use((req,res,next)=>{
     next();
 })
 
-////USINGS common path here and direct in there folder rest path added in files
-app.use('/listings',listings)
-app.use('/listings/:id/reviews',reviews)
-app.use('/',home);
 
+
+////USINGS common path here and direct in there folder rest path added in files(ROUTER)
+app.use('/listings',listingsRouter)
+app.use('/listings/:id/reviews',reviewsRouter)
+app.use('/',homeRouter);
+app.use('/',userRouter)
 
 
 ////In case any other invalid path
@@ -87,3 +107,16 @@ app.use((err,req,res,next)=>{
 app.listen(8080,()=>{
     console.log("App is listening at port 8080")
 })
+
+
+// Comments Explanations:
+// <!--app.get('/demouser',async(req,res)=>{
+//     let fakeUser=new User({
+//         email:"student@gmail.com",
+//         username:"delta-student"
+//     })
+//     ////register is a static method here 1st parameter is object and second is password
+//     // register method will also confirm that the username is unique or not
+//     let registeredUser=await User.register(fakeUser,'helloWorld')
+//     res.send(registeredUser)
+// })-->

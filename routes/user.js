@@ -1,44 +1,26 @@
 const express=require('express');
 const wrapasync = require('../utils/wrapasync');
 const router=express.Router();
-const User=require('../models/User.js');
 const passport = require('passport');
+const { saveRedirectUrl } = require('../middleware.js');
+const {signUpForm, signUpPost,loginForm,loginAuth,logout}=require('../controllers/user.js');
 
 // SignUP
-router.get('/signup',(req,res)=>{
-    res.render('users/signup.ejs');
-})
+router.get('/signup',signUpForm);
 
-
-router.post('/signup',wrapasync(async(req,res)=>{
-    let {username,email,password}=req.body;
-    try {
-        const newUser=new User({
-            email:email,
-            username:username
-        })
-        const registeredUser=await User.register(newUser,password)
-        req.flash("success","User registered Successfully")
-        console.log(registeredUser)
-        res.redirect('/listings');
-    } catch (err) {
-        req.flash('failure',(err.message));
-        res.redirect('/signup');
-    }
-}))
+// signUpPost
+router.post('/signup',wrapasync(signUpPost))
 
 // Login
-router.get('/login',(req,res)=>{
-    res.render('users/login.ejs');
-})
+router.get('/login',loginForm)
 
 // Authentication using passport
-router.post('/login',passport.authenticate('local',{failureRedirect:'/login',failureFlash:{
+router.post('/login',saveRedirectUrl,passport.authenticate('local',{failureRedirect:'/login',failureFlash:{
     type:'failure',
     message:'Username or password is incorrect'
-}}),async(req,res)=>{
-        req.flash("success","User Logged In Successfully.")
-        res.redirect('/listings');
-})
+}}),loginAuth)
+
+// Logout
+router.get('/logout',logout)
 
 module.exports=router;

@@ -7,7 +7,8 @@
             <div class="listing-card card col-6 offset-3 show-card">
                 <img src="<%=list.image%>" class="card-img-top show-img" alt="Listing_Image">
                 <div class="card-body">
-                <p class="card-text">
+                    <p class="card-text">
+                    <b>Owned By: </b><i><%=list.owner.username%> </i><br>
                     <%=list.description%> <br>
                     &#8377; <%=list.price.toLocaleString("en-IN")%>/night <br>
                     <%=list.location%> <br>
@@ -16,15 +17,19 @@
         </div>
     </div>
 </div>
+<!-- Using locals req.user from app.js -->
+<% if(currUser && currUser._id.equals(list.owner._id)){ %>
 <div class="btns">
     <a class="btn btn-dark col-1 offset-3 edit-btn" href="/listings/<%=list._id%>/edit">Edit</a>
     <form action="/listings/<%=list._id%>?_method=DELETE" method="post">
         <button class="btn btn-dark offset-5">Delete</button>
     </form>
 </div>
+<hr>
+<% } %>
 
 <div class="col-8 offset-3 mb-3">
-    <hr>
+    <% if(currUser) {%>
     <h4>Leave a Review</h4>
     <form action="/listings/<%=list._id%>/reviews" method="post" novalidate class="needs-validation">
         <div class="mb-3 mt-3">
@@ -38,13 +43,14 @@
         </div>
         <button class="btn btn-outline-dark">Submit</button>
     </form>
+<% } %>
     <hr>
     <p><b>All Reviews</b></p>
     <div class="row">
         <% for(review of list.reviews){ %>
             <div class="card ml-3 col-5 mb-3 ">
                 <div class="card-body">
-                    <h5 class="card-title">Jane Doe</h5>
+                    <h5 class="card-title">@<%=review.author.username %></h5>
                     <p class="card-text"><%=review.comment %></p>
                     <p class="card-text"><%=review.rating %> Stars</p>
                     <form action="/listings/<%=list._id%>/reviews/<%=review._id%>?_method=DELETE" method="post" class="mb-3">

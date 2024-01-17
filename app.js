@@ -79,10 +79,9 @@ passport.deserializeUser(User.deserializeUser())
 app.use((req,res,next)=>{
     res.locals.success=req.flash('success')
     res.locals.err=req.flash('failure')
+    res.locals.currUser=req.user;
     next();
 })
-
-
 
 ////USINGS common path here and direct in there folder rest path added in files(ROUTER)
 app.use('/listings',listingsRouter)
